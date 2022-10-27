@@ -1,0 +1,32 @@
+{
+  "name": "retext-phase-matching",
+  "version": "1.0.0",
+  "description": "retext plugin for fast dictionary based phase matching",
+  "keywords": [
+    "unified",
+    "retext",
+    "retext-plugin",
+    "plugin",
+    "phrase",
+    "extraction",
+    "dictionary"
+  ],
+  "type": "module",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "dependencies": {
+    "@types/nlcst": "^1.0.0",
+    "nlcst-to-string": "^3.1.0",
+    "typescript": "^4.8.4",
+    "unified": "^10.1.2",
+    "unist-util-visit": "^4.1.1"
+  },
+  "devDependencies": {
+    "typescript": "^4.8.4"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Glenn Jones <glennjonesnet@gmail.com>",
+  "license": "MIT"
+}
