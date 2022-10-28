@@ -8,6 +8,7 @@
       "strict": true,
       "outDir": "./build",
       "rootDir": "./src",
-      "sourceMap": true   
+      "sourceMap": true,
+      "allowSyntheticDefaultImports": true  
     }
 }
