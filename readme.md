@@ -17,34 +17,44 @@ import {phraseMatcher, buildDictionary} from '../build/index.js';
 import {ParseEnglish} from 'parse-english'
 import {toString} from 'nlcst-to-string'
 
-const text = `I have had part time bar jobs in both London and New York`
-const phrases = {
-    'New York': 'city:1', 
-    'London': 'city:2', 
-    'part-time': 'employmenttype:parttime'
+const text1 = `I have had part time bar jobs in both London and New York. Then I worked in London a second time managing a bar.`
+
+const text2 = `I was working full time in a Berlin bar.`
+
+const cityPhrases = {
+    'New York': {'label': 'city', 'code': '1'}, 
+    'London': {'label': 'city', 'code': '2'},
+    'City of London': {'label': 'city', 'code': '2'}, 
+    'Berlin': {'label': 'city', 'code': '3'}
 }
 
-const file = await unified()
-  .use(retextEnglish)
-  .use(phraseMatcher, {
-    phrases, 
-    lowercase: true, 
-    replaceDashes: true, 
-    replaceAccents: true})
-  .use(retextStringify)
-  .process(text)
+const employmentPhrases = {
+    'part-time': {'label': 'employmenttype', 'code': 'parttime'},
+    'full-time': {'label': 'employmenttype', 'code': 'fulltime'}
+}
 
-console.log(JSON.stringify(file)) 
+const file1 = await unified()
+  .use(retextEnglish)
+  .use(PhraseMatcher, cityMatcher, employmentMatcher)
+  .use(retextStringify)
+  .process(text1)
+
+console.log(JSON.stringify(file1)) 
+
+
+const file2 = await unified()
+  .use(retextEnglish)
+  .use(PhraseMatcher, employmentMatcher)
+  .use(retextStringify)
+  .process(text2)
+
+console.log(JSON.stringify(file2)) 
 ```
 
 ## Use example 2
 ```
-const tree = new ParseEnglish().parse(text);
-const changedTree = await unified().use(retextPhaseMatching, {
-    phrases, 
-    lowercase: true, 
-    replaceDashes: true, 
-    replaceAccents: true}).run(tree);
+const tree = new ParseEnglish().parse(text1);
+const changedTree = await unified().use(PhraseMatcher, cityMatcher).run(tree);
 
 console.log(JSON.stringify(changedTree));
 
