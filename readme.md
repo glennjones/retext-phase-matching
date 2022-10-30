@@ -2,10 +2,10 @@
 
 IN DEVELOPMENT
 
-retext plugin for fast dictionary based phase matching using AhoCorasick string matching algorithm
+retext plugin for fast dictionary based phrase or word matching using AhoCorasick string matching algorithm
 
-## Whats it do
-It finds phrases in a text ie "New York" in the example below. It allows to tag each phrase with string based code and returns the position within the text. It design to be very fast when your are searching for thousands of phrases or words.
+## Whats does it do
+It finds phrases in a text ie "New York" in the example text below. It allows you to tag each phrase with string based code and returns the position within the text. It design to be very fast when your are searching a text against thousands of phrases or words.
 
 
 ## Use example 1

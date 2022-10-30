@@ -1,19 +1,24 @@
-interface Match {
-    [key: string]: string;
+interface PhraseMetadata {
+    label?: string;
+    code?: string;
+    normalizedValue?: string;
 }
-interface MatchDictionary {
+interface Phrase {
+    [key: string]: PhraseMetadata;
+}
+interface PhraseDictionary {
     base: any;
     check: any;
     failurelink: any;
     output: any;
 }
 interface Options {
-    phrases: Match;
-    dictionary?: MatchDictionary | undefined;
+    phrases: Phrase;
+    dictionary?: PhraseDictionary | undefined;
     lowercase?: boolean;
     replaceDashes: boolean;
     replaceAccents?: boolean;
 }
 export declare function phraseMatcher(options: Options): (tree: any, file: any) => void;
-export declare function buildDictionary(options: Options): MatchDictionary;
+export declare function buildDictionary(options: Options): PhraseDictionary;
 export {};
