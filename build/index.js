@@ -24,6 +24,7 @@ export function PhraseMatcher(...matchers) {
 export class Matcher {
     lowercase;
     replaceDashes;
+    replaceFullStops;
     replaceAccents;
     phraseObjs;
     phraseKeys = [];
@@ -36,6 +37,7 @@ export class Matcher {
         this.phraseObjs = options.phrases;
         this.lowercase = options.lowercase ? options.lowercase : false;
         this.replaceDashes = options.replaceDashes ? options.replaceDashes : false;
+        this.replaceFullStops = options.replaceFullStops ? options.replaceFullStops : false;
         this.replaceAccents = options.replaceAccents
             ? options.replaceAccents
             : false;
@@ -60,6 +62,9 @@ export class Matcher {
         }
         if (this.replaceDashes !== undefined && this.replaceDashes === true) {
             text = this.replaceDashesInText(text);
+        }
+        if (this.replaceFullStops !== undefined && this.replaceFullStops === true) {
+            text = this.replaceFullStopsInText(text);
         }
         return text;
     }
@@ -86,6 +91,17 @@ export class Matcher {
             /\uFE63/g,
             /\uFF0D/g,
         ];
+        return this.replaceWithSpace(text, patterns);
+    }
+    // replaces dashes with a space so we can match part-time against part time
+    replaceFullStopsInText(text) {
+        // https://www.compart.com/en/unicode/category/Po - English dash chars
+        // ['Full Stop']
+        const patterns = [/\u002E/g];
+        return this.replaceWithSpace(text, patterns);
+    }
+    // replaces a regex pattern with a space
+    replaceWithSpace(text, patterns) {
         patterns.forEach((pattern) => {
             text = text.replace(pattern, ' ');
         });

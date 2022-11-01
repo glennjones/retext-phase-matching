@@ -5,7 +5,7 @@ IN DEVELOPMENT
 retext plugin for fast dictionary based phrase or word matching using AhoCorasick string matching algorithm
 
 ## Whats does it do
-It finds phrases in a text ie "New York" in the example text below. It allows you to tag each phrase with string based code and returns the position within the text. It design to be very fast when your are searching a text against thousands of phrases or words.
+It finds phrases in a text ie "New York" in the example text below. It allows you to tag each phrase with label and code and returns the position of the match within the orginal text. It is designed to be very fast when your are searching a text using thousands of phrases or words.
 
 
 ## Use example 1

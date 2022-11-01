@@ -43,10 +43,10 @@ interface Options {
   phrases: Phrase;
   dictionary?: PhraseDictionary | undefined;
   lowercase?: boolean;
-  replaceDashes: boolean;
+  replaceDashes?: boolean;
+  replaceFullStops?: boolean;
   replaceAccents?: boolean;
 }
-
 
 // function call by retext to pipeline this module
 export function PhraseMatcher(...matchers: Matcher[]): any {
@@ -59,9 +59,9 @@ export function PhraseMatcher(...matchers: Matcher[]): any {
     }
 
     for (let i = 0; i < matchers.length; i++) {
-        const newMatches = matchers[i].match(tree);
-        file.data.matched = file.data.matched.concat(newMatches);
-        file.data.matched.sort(byPropertiesOf<Match>(['start']))
+      const newMatches = matchers[i].match(tree);
+      file.data.matched = file.data.matched.concat(newMatches);
+      file.data.matched.sort(byPropertiesOf<Match>(['start']));
     }
 
     done(null, tree, file);
@@ -72,6 +72,7 @@ export function PhraseMatcher(...matchers: Matcher[]): any {
 export class Matcher {
   lowercase?: boolean;
   replaceDashes?: boolean;
+  replaceFullStops?: boolean;
   replaceAccents?: boolean;
 
   phraseObjs: Phrase;
@@ -81,12 +82,13 @@ export class Matcher {
 
   constructor(options: Options) {
     if (options.phrases === undefined) {
-        throw new Error('You need to pass a `phrases` object in the options');
+      throw new Error('You need to pass a `phrases` object in the options');
     }
 
     this.phraseObjs = options.phrases;
     this.lowercase = options.lowercase ? options.lowercase : false;
     this.replaceDashes = options.replaceDashes ? options.replaceDashes : false;
+    this.replaceFullStops = options.replaceFullStops ? options.replaceFullStops : false;
     this.replaceAccents = options.replaceAccents
       ? options.replaceAccents
       : false;
@@ -116,6 +118,9 @@ export class Matcher {
     if (this.replaceDashes !== undefined && this.replaceDashes === true) {
       text = this.replaceDashesInText(text);
     }
+    if (this.replaceFullStops !== undefined && this.replaceFullStops === true) {
+      text = this.replaceFullStopsInText(text);
+    }
     return text;
   }
 
@@ -143,6 +148,19 @@ export class Matcher {
       /\uFE63/g,
       /\uFF0D/g,
     ];
+    return this.replaceWithSpace(text, patterns);
+  }
+
+  // replaces dashes with a space so we can match part-time against part time
+  private replaceFullStopsInText(text: string): string {
+    // https://www.compart.com/en/unicode/category/Po - English dash chars
+    // ['Full Stop']
+    const patterns = [/\u002E/g];
+    return this.replaceWithSpace(text, patterns);
+  }
+
+  // replaces a regex pattern with a space
+  private replaceWithSpace(text: string, patterns: RegExp[]): string {
     patterns.forEach((pattern) => {
       text = text.replace(pattern, ' ');
     });
@@ -244,7 +262,7 @@ export class Matcher {
 
           if (phraseWordNode.length === 1) {
             allNodes.push(wordNode);
-            const match = this.buildMatchData(allNodes, fullText, phraseText)
+            const match = this.buildMatchData(allNodes, fullText, phraseText);
             matches.push(match);
             startNode = undefined;
             allNodes = [];
@@ -356,9 +374,7 @@ export class Matcher {
   }
 }
 
-
-
-type sortArg<T> = keyof T | `-${string & keyof T}`
+type sortArg<T> = keyof T | `-${string & keyof T}`;
 
 /**
  * Returns a comparator for objects of type T that can be used by sort
@@ -367,36 +383,36 @@ type sortArg<T> = keyof T | `-${string & keyof T}`
  * @param sortBy - the names of the properties to sort by, in precedence order.
  *                 Prefix any name with `-` to sort it in descending order.
  */
-export function byPropertiesOf<T extends object> (sortBy: Array<sortArg<T>>) {
-    function compareByProperty (arg: sortArg<T>) {
-        let key: keyof T
-        let sortOrder = 1
-        if (typeof arg === 'string' && arg.startsWith('-')) {
-            sortOrder = -1
-            // Typescript is not yet smart enough to infer that substring is keyof T
-            key = arg.substr(1) as keyof T
-        } else {
-            // Likewise it is not yet smart enough to infer that arg here is keyof T
-            key = arg as keyof T
-        }
-        return function (a: T, b: T) {
-            const result = a[key] < b[key] ? -1 : a[key] > b[key] ? 1 : 0
+export function byPropertiesOf<T extends object>(sortBy: Array<sortArg<T>>) {
+  function compareByProperty(arg: sortArg<T>) {
+    let key: keyof T;
+    let sortOrder = 1;
+    if (typeof arg === 'string' && arg.startsWith('-')) {
+      sortOrder = -1;
+      // Typescript is not yet smart enough to infer that substring is keyof T
+      key = arg.substr(1) as keyof T;
+    } else {
+      // Likewise it is not yet smart enough to infer that arg here is keyof T
+      key = arg as keyof T;
+    }
+    return function (a: T, b: T) {
+      const result = a[key] < b[key] ? -1 : a[key] > b[key] ? 1 : 0;
 
-            return result * sortOrder
-        }
+      return result * sortOrder;
+    };
+  }
+
+  return function (obj1: T, obj2: T) {
+    let i = 0;
+    let result = 0;
+    const numberOfProperties = sortBy?.length;
+    while (result === 0 && i < numberOfProperties) {
+      result = compareByProperty(sortBy[i])(obj1, obj2);
+      i++;
     }
 
-    return function (obj1: T, obj2: T) {
-        let i = 0
-        let result = 0
-        const numberOfProperties = sortBy?.length
-        while (result === 0 && i < numberOfProperties) {
-            result = compareByProperty(sortBy[i])(obj1, obj2)
-            i++
-        }
-
-        return result
-    }
+    return result;
+  };
 }
 
 /**
@@ -406,6 +422,6 @@ export function byPropertiesOf<T extends object> (sortBy: Array<sortArg<T>>) {
  * @param sortBy - the names of the properties to sort by, in precedence order.
  *                 Prefix any name with `-` to sort it in descending order.
  */
-export function sort<T extends object> (arr: T[], ...sortBy: Array<sortArg<T>>) {
-    arr.sort(byPropertiesOf<T>(sortBy))
+export function sort<T extends object>(arr: T[], ...sortBy: Array<sortArg<T>>) {
+  arr.sort(byPropertiesOf<T>(sortBy));
 }
