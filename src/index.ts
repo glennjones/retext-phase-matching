@@ -44,7 +44,6 @@ interface Options {
   dictionary?: PhraseDictionary | undefined;
   lowercase?: boolean;
   replaceDashes?: boolean;
-  replaceFullStops?: boolean;
   replaceAccents?: boolean;
 }
 
@@ -72,7 +71,6 @@ export function PhraseMatcher(...matchers: Matcher[]): any {
 export class Matcher {
   lowercase?: boolean;
   replaceDashes?: boolean;
-  replaceFullStops?: boolean;
   replaceAccents?: boolean;
 
   phraseObjs: Phrase;
@@ -88,7 +86,6 @@ export class Matcher {
     this.phraseObjs = options.phrases;
     this.lowercase = options.lowercase ? options.lowercase : false;
     this.replaceDashes = options.replaceDashes ? options.replaceDashes : false;
-    this.replaceFullStops = options.replaceFullStops ? options.replaceFullStops : false;
     this.replaceAccents = options.replaceAccents
       ? options.replaceAccents
       : false;
@@ -118,9 +115,6 @@ export class Matcher {
     if (this.replaceDashes !== undefined && this.replaceDashes === true) {
       text = this.replaceDashesInText(text);
     }
-    if (this.replaceFullStops !== undefined && this.replaceFullStops === true) {
-      text = this.replaceFullStopsInText(text);
-    }
     return text;
   }
 
@@ -148,14 +142,6 @@ export class Matcher {
       /\uFE63/g,
       /\uFF0D/g,
     ];
-    return this.replaceWithSpace(text, patterns);
-  }
-
-  // replaces dashes with a space so we can match part-time against part time
-  private replaceFullStopsInText(text: string): string {
-    // https://www.compart.com/en/unicode/category/Po - English dash chars
-    // ['Full Stop']
-    const patterns = [/\u002E/g];
     return this.replaceWithSpace(text, patterns);
   }
 
@@ -195,7 +181,7 @@ export class Matcher {
   private extendTextNodeChildren(wordNode: Word): void {
     if (wordNode.children[0]) {
       wordNode.children.forEach((item) => {
-        if (item.type == 'TextNode') {
+        if (item.type == 'TextNode' || item.type == 'PunctuationNode') {
           const extendedTextNode = item as ExtendedTextNode;
           extendedTextNode.normalizedValue = this.processText(item.value);
         }
@@ -302,7 +288,7 @@ export class Matcher {
     let out = '';
     if (wordNode.children[0]) {
       wordNode.children.forEach((item) => {
-        if (item.type == 'TextNode') {
+        if (item.type == 'TextNode' || item.type == 'PunctuationNode') {
           const extendedTextNode = item as ExtendedTextNode;
           out += extendedTextNode.normalizedValue;
         }
