@@ -1,8 +1,9 @@
 import { visit } from 'unist-util-visit';
 import { toString } from 'nlcst-to-string';
 import { ParseEnglish } from 'parse-english';
+import {normalize} from 'nlcst-normalize'
 import AhoCorasick from 'aho-corasick-node';
-import RemoveAccents from 'remove-accents';
+//import RemoveAccents from 'remove-accents';
 
 import type { Root, SentenceContentMap, Word, Literal } from 'nlcst';
 
@@ -43,8 +44,9 @@ interface Options {
   phrases: Phrase;
   dictionary?: PhraseDictionary | undefined;
   lowercase?: boolean;
-  replaceDashes?: boolean;
-  replaceAccents?: boolean;
+  //replaceDashes?: boolean;
+  //replaceAccents?: boolean;
+  normalize?: boolean;
 }
 
 // function call by retext to pipeline this module
@@ -70,8 +72,9 @@ export function PhraseMatcher(...matchers: Matcher[]): any {
 // a matcher class, build object to store dictionary and excute match
 export class Matcher {
   lowercase?: boolean;
-  replaceDashes?: boolean;
-  replaceAccents?: boolean;
+  //replaceDashes?: boolean;
+  //replaceAccents?: boolean;
+  normalize?: boolean;
 
   phraseObjs: Phrase;
   phraseKeys: string[] = [];
@@ -85,10 +88,9 @@ export class Matcher {
 
     this.phraseObjs = options.phrases;
     this.lowercase = options.lowercase ? options.lowercase : false;
-    this.replaceDashes = options.replaceDashes ? options.replaceDashes : false;
-    this.replaceAccents = options.replaceAccents
-      ? options.replaceAccents
-      : false;
+    //this.replaceDashes = options.replaceDashes ? options.replaceDashes : false;
+    //this.replaceAccents = options.replaceAccents ? options.replaceAccents : false;
+    this.normalize = options.normalize ? options.normalize : false;
 
     this.dictionary = this.buildDictionary();
   }
@@ -109,11 +111,16 @@ export class Matcher {
     if (this.lowercase !== undefined && this.lowercase === true) {
       text = text.toLowerCase();
     }
+    /*
     if (this.replaceAccents !== undefined && this.replaceAccents === true) {
       text = RemoveAccents(text);
     }
     if (this.replaceDashes !== undefined && this.replaceDashes === true) {
       text = this.replaceDashesInText(text);
+    }
+    */
+    if (this.normalize !== undefined && this.normalize === true) {
+      text = normalize(text);
     }
     return text;
   }
@@ -125,6 +132,7 @@ export class Matcher {
     });
   }
 
+  /*
   // replaces dashes with a space so we can match part-time against part time
   private replaceDashesInText(text: string): string {
     // https://www.compart.com/en/unicode/category/Pd - English dash chars
@@ -144,6 +152,7 @@ export class Matcher {
     ];
     return this.replaceWithSpace(text, patterns);
   }
+  */
 
   // replaces a regex pattern with a space
   private replaceWithSpace(text: string, patterns: RegExp[]): string {

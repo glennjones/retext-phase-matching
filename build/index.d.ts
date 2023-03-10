@@ -25,16 +25,12 @@ interface Options {
     phrases: Phrase;
     dictionary?: PhraseDictionary | undefined;
     lowercase?: boolean;
-    replaceDashes?: boolean;
-    replaceFullStops?: boolean;
-    replaceAccents?: boolean;
+    normalize?: boolean;
 }
 export declare function PhraseMatcher(...matchers: Matcher[]): any;
 export declare class Matcher {
     lowercase?: boolean;
-    replaceDashes?: boolean;
-    replaceFullStops?: boolean;
-    replaceAccents?: boolean;
+    normalize?: boolean;
     phraseObjs: Phrase;
     phraseKeys: string[];
     phraseNormalized: string[];
@@ -43,8 +39,6 @@ export declare class Matcher {
     match(tree: Root): Match[];
     private processText;
     private processTextArray;
-    private replaceDashesInText;
-    private replaceFullStopsInText;
     private replaceWithSpace;
     private buildDictionary;
     private getWordsFromTree;

@@ -1,8 +1,8 @@
 import { visit } from 'unist-util-visit';
 import { toString } from 'nlcst-to-string';
 import { ParseEnglish } from 'parse-english';
+import { normalize } from 'nlcst-normalize';
 import AhoCorasick from 'aho-corasick-node';
-import RemoveAccents from 'remove-accents';
 // function call by retext to pipeline this module
 export function PhraseMatcher(...matchers) {
     return (tree, file, done) => {
@@ -23,9 +23,9 @@ export function PhraseMatcher(...matchers) {
 // a matcher class, build object to store dictionary and excute match
 export class Matcher {
     lowercase;
-    replaceDashes;
-    replaceFullStops;
-    replaceAccents;
+    //replaceDashes?: boolean;
+    //replaceAccents?: boolean;
+    normalize;
     phraseObjs;
     phraseKeys = [];
     phraseNormalized = [];
@@ -36,11 +36,9 @@ export class Matcher {
         }
         this.phraseObjs = options.phrases;
         this.lowercase = options.lowercase ? options.lowercase : false;
-        this.replaceDashes = options.replaceDashes ? options.replaceDashes : false;
-        this.replaceFullStops = options.replaceFullStops ? options.replaceFullStops : false;
-        this.replaceAccents = options.replaceAccents
-            ? options.replaceAccents
-            : false;
+        //this.replaceDashes = options.replaceDashes ? options.replaceDashes : false;
+        //this.replaceAccents = options.replaceAccents ? options.replaceAccents : false;
+        this.normalize = options.normalize ? options.normalize : false;
         this.dictionary = this.buildDictionary();
     }
     match(tree) {
@@ -57,14 +55,16 @@ export class Matcher {
         if (this.lowercase !== undefined && this.lowercase === true) {
             text = text.toLowerCase();
         }
+        /*
         if (this.replaceAccents !== undefined && this.replaceAccents === true) {
-            text = RemoveAccents(text);
+          text = RemoveAccents(text);
         }
         if (this.replaceDashes !== undefined && this.replaceDashes === true) {
-            text = this.replaceDashesInText(text);
+          text = this.replaceDashesInText(text);
         }
-        if (this.replaceFullStops !== undefined && this.replaceFullStops === true) {
-            text = this.replaceFullStopsInText(text);
+        */
+        if (this.normalize !== undefined && this.normalize === true) {
+            text = normalize(text);
         }
         return text;
     }
@@ -74,32 +74,27 @@ export class Matcher {
             return this.processText(item);
         });
     }
+    /*
     // replaces dashes with a space so we can match part-time against part time
-    replaceDashesInText(text) {
-        // https://www.compart.com/en/unicode/category/Pd - English dash chars
-        // ['Hyphen-Minus','Hyphen','Non-Breaking Hyphen','Figure Dash', 'En Dash', 'Em Dash', 'Horizontal Bar', 'Small Em Dash','Small Hyphen-Minus','Fullwidth Hyphen-Minus]
-        const patterns = [
-            /\u002D/g,
-            /\u2010/g,
-            /\u2011/g,
-            /\u2012/g,
-            /\u2013/g,
-            /\u2014/g,
-            /\u2015/g,
-            /\uFE58/g,
-            /\uFE63/g,
-            /\uFE63/g,
-            /\uFF0D/g,
-        ];
-        return this.replaceWithSpace(text, patterns);
+    private replaceDashesInText(text: string): string {
+      // https://www.compart.com/en/unicode/category/Pd - English dash chars
+      // ['Hyphen-Minus','Hyphen','Non-Breaking Hyphen','Figure Dash', 'En Dash', 'Em Dash', 'Horizontal Bar', 'Small Em Dash','Small Hyphen-Minus','Fullwidth Hyphen-Minus]
+      const patterns = [
+        /\u002D/g,
+        /\u2010/g,
+        /\u2011/g,
+        /\u2012/g,
+        /\u2013/g,
+        /\u2014/g,
+        /\u2015/g,
+        /\uFE58/g,
+        /\uFE63/g,
+        /\uFE63/g,
+        /\uFF0D/g,
+      ];
+      return this.replaceWithSpace(text, patterns);
     }
-    // replaces dashes with a space so we can match part-time against part time
-    replaceFullStopsInText(text) {
-        // https://www.compart.com/en/unicode/category/Po - English dash chars
-        // ['Full Stop']
-        const patterns = [/\u002E/g];
-        return this.replaceWithSpace(text, patterns);
-    }
+    */
     // replaces a regex pattern with a space
     replaceWithSpace(text, patterns) {
         patterns.forEach((pattern) => {
@@ -133,7 +128,7 @@ export class Matcher {
     extendTextNodeChildren(wordNode) {
         if (wordNode.children[0]) {
             wordNode.children.forEach((item) => {
-                if (item.type == 'TextNode') {
+                if (item.type == 'TextNode' || item.type == 'PunctuationNode') {
                     const extendedTextNode = item;
                     extendedTextNode.normalizedValue = this.processText(item.value);
                 }
@@ -230,7 +225,7 @@ export class Matcher {
         let out = '';
         if (wordNode.children[0]) {
             wordNode.children.forEach((item) => {
-                if (item.type == 'TextNode') {
+                if (item.type == 'TextNode' || item.type == 'PunctuationNode') {
                     const extendedTextNode = item;
                     out += extendedTextNode.normalizedValue;
                 }
