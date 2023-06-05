@@ -2,8 +2,25 @@ import { visit } from 'unist-util-visit';
 import { toString } from 'nlcst-to-string';
 import { ParseEnglish } from 'parse-english';
 import {normalize} from 'nlcst-normalize'
-import AhoCorasick from 'aho-corasick-node';
+import { Trie, Emit } from '@tanishiking/aho-corasick'
 //import RemoveAccents from 'remove-accents';
+
+
+
+export function match(text: string): string[] {
+
+    const trie = new Trie([])
+
+    const keywords = ['b', 'ba', 'nan', 'ab'];
+    keywords.forEach(k => trie.addKeyword(k));
+    const emits: Emit[] = trie.parseText(text)
+
+    return emits.map(e => e.keyword);
+
+}
+
+
+
 
 import type { Root, SentenceContentMap, Word, Literal } from 'nlcst';
 
@@ -24,13 +41,6 @@ interface Phrase {
   [key: string]: PhraseMetadata;
 }
 
-interface PhraseDictionary {
-  base: any;
-  check: any;
-  failurelink: any;
-  output: any;
-  match: Function;
-}
 
 interface Match {
   match: string;
@@ -42,7 +52,7 @@ interface Match {
 
 interface Options {
   phrases: Phrase;
-  dictionary?: PhraseDictionary | undefined;
+  dictionary?: Trie | undefined;
   lowercase?: boolean;
   //replaceDashes?: boolean;
   //replaceAccents?: boolean;
@@ -79,7 +89,7 @@ export class Matcher {
   phraseObjs: Phrase;
   phraseKeys: string[] = [];
   phraseNormalized: string[] = [];
-  dictionary: PhraseDictionary;
+  dictionary: Trie;
 
   constructor(options: Options) {
     if (options.phrases === undefined) {
@@ -92,14 +102,18 @@ export class Matcher {
     //this.replaceAccents = options.replaceAccents ? options.replaceAccents : false;
     this.normalize = options.normalize ? options.normalize : false;
 
-    this.dictionary = this.buildDictionary();
+    this.dictionary = new Trie([])
+    
+    this.buildDictionary();
   }
 
   match(tree: Root) {
     const words = this.processTextArray(this.getWordsFromTree(tree));
     const text = words.join(' ');
-    const foundMatches = this.dictionary.match(text);
+    const emits: Emit[] = this.dictionary.parseText(text);
+    let foundMatches = emits.map((e) => { return e.keyword; });
 
+    // use our own logic for full word matching - dates back to using aho-corasick-node which did not do this
     const matches = foundMatches.filter((phrase: string) => {
       return this.isFullWordMatch(phrase, text);
     });
@@ -163,16 +177,14 @@ export class Matcher {
   }
 
   // carete a AhoCorasick instance
-  private buildDictionary(): PhraseDictionary {
+  private buildDictionary() {
     this.phraseKeys = Object.keys(this.phraseObjs);
     this.phraseNormalized = this.processTextArray(this.phraseKeys);
-    const builder = AhoCorasick.builder();
     this.phraseNormalized.forEach((phrase, i) => {
       //const keys = Object.keys(options.phrases);
       this.phraseObjs[this.phraseKeys[i]].normalizedValue = phrase;
-      builder.add(phrase);
+      this.dictionary.addKeyword(phrase);
     });
-    return builder.build();
   }
 
   // use tokenised tree to get an array of words - uses 'nlcst-to-string' to return word list

@@ -2,7 +2,15 @@ import { visit } from 'unist-util-visit';
 import { toString } from 'nlcst-to-string';
 import { ParseEnglish } from 'parse-english';
 import { normalize } from 'nlcst-normalize';
-import AhoCorasick from 'aho-corasick-node';
+import { Trie } from '@tanishiking/aho-corasick';
+//import RemoveAccents from 'remove-accents';
+export function match(text) {
+    const trie = new Trie([]);
+    const keywords = ['b', 'ba', 'nan', 'ab'];
+    keywords.forEach(k => trie.addKeyword(k));
+    const emits = trie.parseText(text);
+    return emits.map(e => e.keyword);
+}
 // function call by retext to pipeline this module
 export function PhraseMatcher(...matchers) {
     return (tree, file, done) => {
@@ -39,12 +47,14 @@ export class Matcher {
         //this.replaceDashes = options.replaceDashes ? options.replaceDashes : false;
         //this.replaceAccents = options.replaceAccents ? options.replaceAccents : false;
         this.normalize = options.normalize ? options.normalize : false;
-        this.dictionary = this.buildDictionary();
+        this.dictionary = new Trie([]);
+        this.buildDictionary();
     }
     match(tree) {
         const words = this.processTextArray(this.getWordsFromTree(tree));
         const text = words.join(' ');
-        const foundMatches = this.dictionary.match(text);
+        const emits = this.dictionary.parseText(text);
+        let foundMatches = emits.map((e) => { return e.keyword; });
         const matches = foundMatches.filter((phrase) => {
             return this.isFullWordMatch(phrase, text);
         });
@@ -106,13 +116,11 @@ export class Matcher {
     buildDictionary() {
         this.phraseKeys = Object.keys(this.phraseObjs);
         this.phraseNormalized = this.processTextArray(this.phraseKeys);
-        const builder = AhoCorasick.builder();
         this.phraseNormalized.forEach((phrase, i) => {
             //const keys = Object.keys(options.phrases);
             this.phraseObjs[this.phraseKeys[i]].normalizedValue = phrase;
-            builder.add(phrase);
+            this.dictionary.addKeyword(phrase);
         });
-        return builder.build();
     }
     // use tokenised tree to get an array of words - uses 'nlcst-to-string' to return word list
     getWordsFromTree(tree) {

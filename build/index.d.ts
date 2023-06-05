@@ -1,3 +1,5 @@
+import { Trie } from '@tanishiking/aho-corasick';
+export declare function match(text: string): string[];
 import type { Root } from 'nlcst';
 interface PhraseMetadata {
     label?: string;
@@ -6,13 +8,6 @@ interface PhraseMetadata {
 }
 interface Phrase {
     [key: string]: PhraseMetadata;
-}
-interface PhraseDictionary {
-    base: any;
-    check: any;
-    failurelink: any;
-    output: any;
-    match: Function;
 }
 interface Match {
     match: string;
@@ -23,7 +18,7 @@ interface Match {
 }
 interface Options {
     phrases: Phrase;
-    dictionary?: PhraseDictionary | undefined;
+    dictionary?: Trie | undefined;
     lowercase?: boolean;
     normalize?: boolean;
 }
@@ -34,7 +29,7 @@ export declare class Matcher {
     phraseObjs: Phrase;
     phraseKeys: string[];
     phraseNormalized: string[];
-    dictionary: PhraseDictionary;
+    dictionary: Trie;
     constructor(options: Options);
     match(tree: Root): Match[];
     private processText;
